@@ -23,15 +23,27 @@ import { createUserLoader } from "./utils/createUserLoader";
 import { createVoteStatusLoader } from "./utils/createVoteLoader";
 
 const main = async () => {
-  const connection = await createConnection({
-    type: "postgres",
-    url: process.env.DATABASE_URL,
-    logging: true,
-    // synchronize: true,
-    entities: [Post, User, Updoot, Message],
-    migrations: [path.join(__dirname, "./migrations/*")],
-  });
-  connection.runMigrations();
+  let retries = 5;
+  while (retries) {
+    try {
+      const connection = await createConnection({
+        type: "postgres",
+        url: process.env.DATABASE_URL,
+        logging: true,
+        // synchronize: true,
+        entities: [Post, User, Updoot, Message],
+        migrations: [path.join(__dirname, "./migrations/*")],
+      });
+      connection.runMigrations();
+      break;
+    } catch (error) {
+      console.log(error);
+      retries -= 1;
+      console.log("retries left ", retries);
+      // wait a little
+      await new Promise((res) => setTimeout(res, 10000));
+    }
+  }
   // await Message.delete({});
 
   const app = express();
