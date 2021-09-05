@@ -6,4 +6,5 @@ dist/*
 pgdata/
 redis-data/
 Dockerfile
+yarn-error.log
 docker-compose.yaml

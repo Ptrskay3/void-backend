@@ -2,65 +2,64 @@ import { Message } from "../entities/Message";
 import {
   Arg,
   Ctx,
-  Int,
+  Field,
+  InputType,
   Mutation,
   Query,
+  Int,
   Resolver,
-  Root,
-  Subscription,
   UseMiddleware,
-  PubSub,
 } from "type-graphql";
 import { MyContext } from "../types";
 import { isAuth } from "../middleware/isAuth";
-import { PubSubEngine } from "graphql-subscriptions";
+
+@InputType()
+class MessageInput {
+  @Field()
+  text: string;
+
+  @Field()
+  postId: number;
+}
 
 @Resolver(Message)
 export class MessageResolver {
-  @Subscription({ topics: "NOTIFICATIONS" })
-  newMessage(@Root() msg: Message): Message {
-    return msg;
-  }
-
   @Mutation(() => Message)
   @UseMiddleware(isAuth)
   async createMessage(
-    @PubSub() pubSub: PubSubEngine,
-    @Arg("message") message: string,
-    @Arg("postId", () => Int) postId: number,
+    @Arg("input") input: MessageInput,
     @Ctx() { req }: MyContext
   ): Promise<Message> {
-    const msg = await Message.create({
-      message,
-      postId,
-      creatorId: req.session.userId,
+    return Message.create({
+      ...input,
+      userId: req.session.userId,
     }).save();
-
-    await pubSub.publish("NOTIFICATIONS", msg);
-
-    return msg;
   }
   @Query(() => [Message], { nullable: true })
   async findMessagesByPostId(
     @Arg("postId") postId: number
   ): Promise<Message[] | undefined> {
-    return Message.find({ relations: ["creator", "post"], where: { postId } });
+    return Message.find({ where: { postId } });
   }
 
   @Query(() => [Message], { nullable: true })
-  async findMessagesByCreatorId(
-    @Arg("creatorId") creatorId: number
+  async messages(): Promise<Message[] | undefined> {
+    return Message.find({ relations: ["user", "post"] });
+  }
+
+  @Query(() => [Message], { nullable: true })
+  async findMessagesByUserId(
+    @Arg("userId") userId: number
   ): Promise<Message[] | undefined> {
     return Message.find({
-      relations: ["creator", "post"],
-      where: { creatorId },
+      where: { userId },
     });
   }
 
   @Mutation(() => Boolean)
   @UseMiddleware(isAuth)
   async deleteMessage(
-    @Arg("messageId") messageId: number,
+    @Arg("messageId", () => Int) messageId: number,
     @Ctx() { req }: MyContext
   ) {
     const message = await Message.findOne({ id: messageId });
@@ -69,7 +68,7 @@ export class MessageResolver {
       return false;
     }
     // permission error
-    if (message.creatorId !== req.session.userId) {
+    if (message.userId !== req.session.userId) {
       throw new Error("not authorized");
     }
     await Message.delete({ id: messageId });

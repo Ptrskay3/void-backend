@@ -19,16 +19,16 @@ export class Message extends BaseEntity {
   id!: number;
 
   @Column()
-  @Field(() => String, { nullable: true })
-  message?: string;
+  @Field(() => String)
+  text: string;
 
   @Field()
   @Column()
-  creatorId: number;
+  userId: number;
 
   @Field(() => User)
   @ManyToOne(() => User, (user) => user.messages)
-  creator: User;
+  user: User;
 
   @Field()
   @Column()

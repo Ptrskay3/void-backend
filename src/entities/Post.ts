@@ -47,6 +47,7 @@ export class Post extends BaseEntity {
   @OneToMany(() => Updoot, (updoot) => updoot.post)
   updoots: Updoot[];
 
+  @Field(() => [Message], { nullable: true })
   @OneToMany(() => Message, (message) => message.post)
   messages: Message[];
 

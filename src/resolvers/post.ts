@@ -18,6 +18,7 @@ import { isAuth } from "../middleware/isAuth";
 import { getConnection } from "typeorm";
 import { Updoot } from "../entities/Updoot";
 import { User } from "../entities/juser";
+import { Message } from "../entities/Message";
 
 @InputType()
 class PostInput {
@@ -209,7 +210,7 @@ export class PostResolver {
 
   @Query(() => Post, { nullable: true })
   post(@Arg("id", () => Int) id: number): Promise<Post | undefined> {
-    return Post.findOne(id);
+    return Post.findOne(id, { relations: ["messages", "messages.user"] });
   }
 
   @Mutation(() => Post)
@@ -265,6 +266,8 @@ export class PostResolver {
     // we need to delete the votes connected to the post
     // before deleting the post itself
     await Updoot.delete({ postId: id });
+    // and we need to delete the connected messages
+    await Message.delete({ postId: id });
     // only allowed to delete owned posts
     await Post.delete({ id });
     return true;

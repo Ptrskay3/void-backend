@@ -3,9 +3,9 @@ import "reflect-metadata";
 import express from "express";
 import { ApolloServer } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
-import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/post";
 import { UserResolver } from "./resolvers/user";
+import { MessageResolver } from "./resolvers/message";
 import Redis from "ioredis";
 import session from "express-session";
 import connectRedis from "connect-redis";
@@ -18,7 +18,6 @@ import { User } from "./entities/juser";
 import path from "path";
 import { Updoot } from "./entities/Updoot";
 import { Message } from "./entities/Message";
-import { MessageResolver } from "./resolvers/message";
 import { createUserLoader } from "./utils/createUserLoader";
 import { createVoteStatusLoader } from "./utils/createVoteLoader";
 
@@ -30,7 +29,7 @@ const main = async () => {
         type: "postgres",
         url: process.env.DATABASE_URL,
         logging: true,
-        // synchronize: true,
+        synchronize: process.env.NODE_ENV === "development",
         entities: [Post, User, Updoot, Message],
         migrations: [path.join(__dirname, "./migrations/*")],
       });
@@ -44,12 +43,11 @@ const main = async () => {
       await new Promise((res) => setTimeout(res, 10000));
     }
   }
-  // await Message.delete({});
 
   const app = express();
   const RedisStore = connectRedis(session);
   const redis = new Redis(process.env.REDIS_URL);
-  app.set("trust proxy", 1); // becuase we're behind nginx
+  app.set("trust proxy", 1); // because we're behind nginx
   app.use(
     cors({
       // origin: true,
@@ -79,7 +77,7 @@ const main = async () => {
 
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [HelloResolver, PostResolver, UserResolver, MessageResolver],
+      resolvers: [PostResolver, UserResolver, MessageResolver],
       validate: false,
     }),
     subscriptions: {},
@@ -96,9 +94,6 @@ const main = async () => {
     app,
     cors: false,
   });
-
-  // const httpServer = http.createServer(app);
-  // apolloServer.installSubscriptionHandlers(httpServer);
 
   app.listen(process.env.PORT, () => {
     console.log(`server up on port ${process.env.PORT}`);

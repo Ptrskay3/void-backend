@@ -36,7 +36,7 @@ export class User extends BaseEntity {
   @OneToMany(() => Updoot, (updoot) => updoot.user)
   updoots: Updoot[];
 
-  @OneToMany(() => Message, (message) => message.creator)
+  @OneToMany(() => Message, (message) => message.user)
   messages: Message[];
 
   @Field(() => String)

@@ -108,6 +108,7 @@ export class UserResolver {
     if (!user) {
       // the email is not in db
       // don't let people fish emails based on that
+      // so just return true here as well
       return true;
     }
 
