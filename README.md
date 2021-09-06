@@ -2,12 +2,12 @@
 
 ## Building locally
 
-The recommended way for building is Docker. Assuming you have PostgreSQL, Redis and Docker installed, setup a `.env.local` file in the root directory according to the `.env.example` file. It should look similar to this:
+The recommended way for building is Docker. Assuming you have it installed, setup a `.env.local` file in the root directory according to the `.env.example` file. It should look similar to this:
 
 ### `.env.local`:
 
 ```
-DATABASE_URL=postgresql://postgres:postgres@postgres:5432/your_database_name_here
+DATABASE_URL=postgresql://postgres:postgres@postgres:5432/postgres
 REDIS_URL=redis://redis:6379
 PORT=4000
 REDIS_SECRET=THIS_IS_A_BIG_SECRET
