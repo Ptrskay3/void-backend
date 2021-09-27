@@ -16,7 +16,7 @@ import {
 import { MyContext } from "../types";
 import { isAuth } from "../middleware/isAuth";
 import { getConnection } from "typeorm";
-import { Updoot } from "../entities/Updoot";
+import { Upvote } from "../entities/Upvote";
 import { User } from "../entities/juser";
 import { Message } from "../entities/Message";
 
@@ -57,11 +57,11 @@ export class PostResolver {
     @Arg("value", () => Int) value: number,
     @Ctx() { req }: MyContext
   ) {
-    const isUpdoot = value === 1;
-    const realValue = isUpdoot ? 1 : -1;
+    const isUpvote = value === 1;
+    const realValue = isUpvote ? 1 : -1;
     const { userId } = req.session;
 
-    const updoot = await Updoot.findOne({ where: { userId, postId } });
+    const upvote = await Upvote.findOne({ where: { userId, postId } });
 
     // can't vote on owned posts
     const post = await Post.findOne({ where: { id: postId } });
@@ -70,11 +70,11 @@ export class PostResolver {
     }
 
     // already voted, see if this vote matches their previos
-    if (updoot && updoot.value !== realValue) {
+    if (upvote && upvote.value !== realValue) {
       await getConnection().transaction(async (tm) => {
         tm.query(
           `
-          update updoot
+          update upvote
           set value = $3
           where "postId" = $2 and "userId" = $1
         `,
@@ -87,17 +87,16 @@ export class PostResolver {
           set points = points + $1 
           where id = $2
         `,
-          [updoot.value === 0 ? realValue : 2 * realValue, postId]
+          [upvote.value === 0 ? realValue : 2 * realValue, postId]
         );
       });
       return true;
       // they want to delete their vote
-    } else if (updoot && updoot.value === realValue) {
-      // TODO
+    } else if (upvote && upvote.value === realValue) {
       await getConnection().transaction(async (tm) => {
         tm.query(
           `
-          update updoot
+          update upvote
           set value = $3
           where "postId" = $2 and "userId" = $1
         `,
@@ -110,16 +109,16 @@ export class PostResolver {
           set points = points + $1
           where id = $2
         `,
-          [updoot.value === 1 ? -1 : 1, postId]
+          [upvote.value === 1 ? -1 : 1, postId]
         );
       });
       return true;
       // they never voted
-    } else if (!updoot) {
+    } else if (!upvote) {
       await getConnection().transaction(async (tm) => {
         tm.query(
           `
-          insert into updoot ("userId", "postId", value)
+          insert into upvote ("userId", "postId", value)
           values ($1, $2, $3)
         `,
           [userId, postId, realValue]
@@ -142,18 +141,18 @@ export class PostResolver {
   @FieldResolver(() => Int, { nullable: true })
   async voteStatus(
     @Root() post: Post,
-    @Ctx() { updootLoader, req }: MyContext
+    @Ctx() { upvoteLoader, req }: MyContext
   ) {
     if (!req.session.userId) {
       return null;
     }
 
-    const updoot = await updootLoader.load({
+    const upvote = await upvoteLoader.load({
       postId: post.id,
       userId: req.session.userId,
     });
 
-    return updoot ? updoot.value : null;
+    return upvote ? upvote.value : null;
   }
 
   @Query(() => Int)
@@ -188,18 +187,6 @@ export class PostResolver {
     `,
       replaces
     );
-
-    // const qb = getConnection()
-    //   .getRepository(Post)
-    //   .createQueryBuilder("p")
-    //   .innerJoinAndSelect("p.creator", "u", 'u.id = p."creatorId"')
-    //   .orderBy("p.createdAt", "DESC")
-    //   .take(realLimitPlusOne);
-    // if (cursor) {
-    //   qb.where("p.createdAt < :cursor", { cursor: new Date(parseInt(cursor)) });
-    // }
-
-    // const posts = await qb.getMany();
 
     return {
       hasMore: posts.length === realLimitPlusOne,
@@ -251,7 +238,7 @@ export class PostResolver {
     @Ctx() { req }: MyContext
   ): Promise<boolean> {
     // the cascade way:
-    // Updoot table updated
+    // Upvote table updated
     // await Post.delete({ id, creatorId: req.session.userId });
 
     const post = await Post.findOne(id);
@@ -265,7 +252,7 @@ export class PostResolver {
     }
     // we need to delete the votes connected to the post
     // before deleting the post itself
-    await Updoot.delete({ postId: id });
+    await Upvote.delete({ postId: id });
     // and we need to delete the connected messages
     await Message.delete({ postId: id });
     // only allowed to delete owned posts

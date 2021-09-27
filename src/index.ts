@@ -16,13 +16,13 @@ import { createConnection } from "typeorm";
 import { Post } from "./entities/Post";
 import { User } from "./entities/juser";
 import path from "path";
-import { Updoot } from "./entities/Updoot";
+import { Upvote } from "./entities/Upvote";
 import { Message } from "./entities/Message";
 import { createUserLoader } from "./utils/createUserLoader";
 import { createVoteStatusLoader } from "./utils/createVoteLoader";
 
 const main = async () => {
-  let retries = 5;
+  let retries = 10;
   while (retries) {
     try {
       const connection = await createConnection({
@@ -30,7 +30,7 @@ const main = async () => {
         url: process.env.DATABASE_URL,
         logging: true,
         synchronize: process.env.NODE_ENV === "development",
-        entities: [Post, User, Updoot, Message],
+        entities: [Post, User, Upvote, Message],
         migrations: [path.join(__dirname, "./migrations/*")],
       });
       connection.runMigrations();
@@ -39,7 +39,7 @@ const main = async () => {
       console.log(error);
       retries -= 1;
       console.log("retries left ", retries);
-      // wait a little
+      // give 10s break for the db to come alive
       await new Promise((res) => setTimeout(res, 10000));
     }
   }
@@ -50,7 +50,6 @@ const main = async () => {
   app.set("trust proxy", 1); // because we're behind nginx
   app.use(
     cors({
-      // origin: true,
       origin: process.env.CORS_ORIGIN,
       credentials: true,
     })
@@ -69,7 +68,7 @@ const main = async () => {
         secure: production, // only https
         domain: production ? ".voidphysics.com" : undefined,
       },
-      secret: process.env.REDIS_SECRET,
+      secret: process.env.REDIS_SECRET!,
       resave: false,
       saveUninitialized: false, // don't store empty session
     })
@@ -86,7 +85,7 @@ const main = async () => {
       res,
       redis,
       userLoader: createUserLoader(),
-      updootLoader: createVoteStatusLoader(),
+      upvoteLoader: createVoteStatusLoader(),
     }),
   });
 

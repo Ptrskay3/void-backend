@@ -6,10 +6,9 @@ import { User } from "./entities/juser";
 import { createVoteStatusLoader } from "./utils/createVoteLoader";
 
 export type MyContext = {
-  // em: EntityManager<any> & EntityManager<IDatabaseDriver<Connection>>;
   req: Request & { session?: Session & { userId?: number } };
   res: Response;
   redis: Redis;
   userLoader: DataLoader<number, User>;
-  updootLoader: ReturnType<typeof createVoteStatusLoader>;
+  upvoteLoader: ReturnType<typeof createVoteStatusLoader>;
 };

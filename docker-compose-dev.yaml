@@ -21,6 +21,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
+    command: yarn dev --legacy-watch
+    volumes:
+      - ./src:/usr/app/src
+      - /usr/app/node_modules
+      - ./nodemon.json:/user/app/nodemon.json
+    stdin_open: true
     depends_on:
       - postgres
       - redis

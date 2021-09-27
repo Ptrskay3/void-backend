@@ -10,7 +10,7 @@ import {
 } from "typeorm";
 import { Message } from "./Message";
 import { Post } from "./Post";
-import { Updoot } from "./Updoot";
+import { Upvote } from "./Upvote";
 
 @ObjectType()
 @Entity()
@@ -33,8 +33,8 @@ export class User extends BaseEntity {
   @OneToMany(() => Post, (post) => post.creator)
   posts: Post[];
 
-  @OneToMany(() => Updoot, (updoot) => updoot.user)
-  updoots: Updoot[];
+  @OneToMany(() => Upvote, (upvote) => upvote.user)
+  upvotes: Upvote[];
 
   @OneToMany(() => Message, (message) => message.user)
   messages: Message[];

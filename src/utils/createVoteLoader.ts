@@ -1,14 +1,16 @@
 import DataLoader from "dataloader";
-import { Updoot } from "../entities/Updoot";
+import { Upvote } from "../entities/Upvote";
 
 export const createVoteStatusLoader = () =>
-  new DataLoader<{ postId: number; userId: number }, Updoot | null>(
+  new DataLoader<{ postId: number; userId: number }, Upvote | null>(
     async (keys) => {
-      const updoots = await Updoot.findByIds(keys as any);
-      const updootIds2Updoot: Record<string, Updoot> = {};
-      updoots.forEach((updoot) => {
-        updootIds2Updoot[`${updoot.userId}|${updoot.postId}`] = updoot;
+      const upvotes = await Upvote.findByIds(keys as any);
+      const upvoteIds2Upvotes: Record<string, Upvote> = {};
+      upvotes.forEach((upvote) => {
+        upvoteIds2Upvotes[`${upvote.userId}|${upvote.postId}`] = upvote;
       });
-      return keys.map((key) => updootIds2Updoot[`${key.userId}|${key.postId}`]);
+      return keys.map(
+        (key) => upvoteIds2Upvotes[`${key.userId}|${key.postId}`]
+      );
     }
   );
